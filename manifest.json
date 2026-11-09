@@ -1,0 +1,23 @@
+{
+  "name": "El Gritón — Lotería Mexicana Tradicional",
+  "short_name": "El Gritón",
+  "description": "Cantador de cartas de la Lotería Mexicana tradicional con dichos aleatorios y mesa de cartas cantadas.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#1c100b",
+  "theme_color": "#1c100b",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "cartas/0.PNG",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "cartas/0.PNG",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
+
