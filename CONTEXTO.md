@@ -3,6 +3,9 @@
 ## 1. Propósito del Proyecto
 Aplicación web progresiva (**PWA**) diseñada específicamente para actuar como **"El Gritón" (cantador de cartas)** en partidas presenciales de **Lotería Mexicana** donde los jugadores utilizan **tablas físicas impresas tradicionales**.
 
+- **URL Pública (GitHub Pages)**: https://cm553c.github.io/loteria-mexicana/
+- **Repositorio Oficial**: https://github.com/cm553c/loteria-mexicana
+
 La aplicación cumple dos funciones centrales:
 1. **Cantar las 54 cartas tradicionales** con voz en español (Text-to-Speech) utilizando **múltiples dichos populares y tradicionales aleatorios** por carta.
 2. **Mostrar en vivo la Mesa de Cartas Cantadas**, permitiendo ver todas las cartas que ya salieron (con su imagen original de Don Clemente) para revisar rápidamente cualquier tabla física cuando alguien grita *"¡Lotería!"*.
@@ -63,3 +66,4 @@ g:\loteria mexicana\
 ### 3.5. Optimización para Celulares (PWA + Screen Wake Lock)
 - Implementa `navigator.wakeLock.request('screen')` para impedir que la pantalla del teléfono se apague mientras se están cantando las cartas.
 - Incluye `manifest.json` y Service Worker (`sw.js`) para instalarse en la pantalla de inicio de Android/iPhone y funcionar incluso sin conexión.
+
