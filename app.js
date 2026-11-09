@@ -1,4 +1,5 @@
-// Lógica principal de "El Gritón" — Cantador de Lotería Mexicana con Imágenes Tradicionales y Dichos Aleatorios
+// Lógica principal de "El Gritón" — Optimizada para Celulares (Android / iPhone) y Escritorio
+// Incluye Motor de Voz Híbrido (Web Speech Nativo corregido para móvil + Respaldo de Voz Online)
 
 (() => {
   const INTRO_SHOUTS = [
@@ -7,6 +8,8 @@
     "¡Abran bien las orejas y preparen sus frijolitos, que arrancamos con!",
     "¡Juego limpio y tablas listas, que empieza la corrida con!"
   ];
+
+  const isMobileDevice = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "");
 
   const state = {
     deck: [],                  // Cartas barajadas pendientes por salir
@@ -21,11 +24,13 @@
     callStyle: "both",         // 'both' | 'name' | 'riddle'
     sortMode: "recent",        // 'recent' | 'number' | 'all54'
     searchQuery: "",
+    mobileView: "griton",      // 'griton' | 'mesa'
     // Audio y Voz
     voiceEnabled: true,
     sfxEnabled: true,
     introShout: true,
-    selectedVoiceURI: "",
+    ttsEngine: "auto",         // 'auto' | 'online' | 'native'
+    selectedVoiceURI: "default_es_mx",
     voiceRate: 1.0,
     voicePitch: 1.0,
     isSpeaking: false
@@ -33,6 +38,13 @@
 
   // Referencias del DOM
   const el = {
+    sectionGriton: document.getElementById("sectionGriton"),
+    sectionMesa: document.getElementById("sectionMesa"),
+    tabMobileGriton: document.getElementById("tabMobileGriton"),
+    tabMobileMesa: document.getElementById("tabMobileMesa"),
+    mobileTabCalledCount: document.getElementById("mobileTabCalledCount"),
+    btnSeeAllMobile: document.getElementById("btnSeeAllMobile"),
+    recentMiniStrip: document.getElementById("recentMiniStrip"),
     drawnCount: document.getElementById("drawnCount"),
     remainingCount: document.getElementById("remainingCount"),
     deckProgressBar: document.getElementById("deckProgressBar"),
@@ -55,6 +67,14 @@
     autoPlayText: document.getElementById("autoPlayText"),
     btnRepeat: document.getElementById("btnRepeat"),
     btnNewGame: document.getElementById("btnNewGame"),
+    btnNewGameHeader: document.getElementById("btnNewGameHeader"),
+    // Barra inferior móvil
+    btnMobileAuto: document.getElementById("btnMobileAuto"),
+    mobileAutoIcon: document.getElementById("mobileAutoIcon"),
+    mobileAutoText: document.getElementById("mobileAutoText"),
+    btnMobileNext: document.getElementById("btnMobileNext"),
+    mobileNextText: document.getElementById("mobileNextText"),
+    btnMobileRepeat: document.getElementById("btnMobileRepeat"),
     speedSelect: document.getElementById("speedSelect"),
     callStyleSelect: document.getElementById("callStyleSelect"),
     // Mesa de Cartas Cantadas
@@ -82,6 +102,7 @@
     chkVoiceEnabled: document.getElementById("chkVoiceEnabled"),
     chkSfxEnabled: document.getElementById("chkSfxEnabled"),
     chkIntroShout: document.getElementById("chkIntroShout"),
+    ttsEngineSelect: document.getElementById("ttsEngineSelect"),
     voiceSelect: document.getElementById("voiceSelect"),
     voiceRate: document.getElementById("voiceRate"),
     voiceRateVal: document.getElementById("voiceRateVal"),
@@ -91,6 +112,32 @@
     // Confetti
     confettiCanvas: document.getElementById("confettiCanvas")
   };
+
+  // ==========================================
+  // NAVEGACIÓN DE PESTAÑAS EN CELULAR
+  // ==========================================
+  function setMobileView(view) {
+    state.mobileView = view;
+    const isMobile = window.innerWidth <= 960;
+    if (!isMobile) {
+      el.sectionGriton.classList.remove("mobile-hidden-panel");
+      el.sectionMesa.classList.remove("mobile-hidden-panel");
+      return;
+    }
+    if (view === "griton") {
+      el.sectionGriton.classList.remove("mobile-hidden-panel");
+      el.sectionMesa.classList.add("mobile-hidden-panel");
+      el.tabMobileGriton.classList.add("active");
+      el.tabMobileMesa.classList.remove("active");
+    } else {
+      el.sectionGriton.classList.add("mobile-hidden-panel");
+      el.sectionMesa.classList.remove("mobile-hidden-panel");
+      el.tabMobileGriton.classList.remove("active");
+      el.tabMobileMesa.classList.add("active");
+    }
+  }
+
+  window.addEventListener("resize", () => setMobileView(state.mobileView));
 
   // Contexto Web Audio API para sonidos
   let audioCtx = null;
@@ -158,7 +205,7 @@
   };
 
   // ==========================================
-  // SELECCIÓN ALEATORIA DE DICHOS (SIN REPETIR EL ANTERIOR)
+  // SELECCIÓN ALEATORIA DE DICHOS
   // ==========================================
   function pickRandomDicho(card) {
     const list = Array.isArray(card.dichos) && card.dichos.length > 0
@@ -187,20 +234,39 @@
   }
 
   // ==========================================
-  // VOZ CANTADA EN ESPAÑOL (Web Speech API)
+  // MOTOR DE VOZ HÍBRIDO (NATIVO + ONLINE PARA CELULAR)
   // ==========================================
   let availableVoices = [];
+  let currentAudioEl = null;
+  let speechTimeoutId = null;
+
+  function normalizeLang(lang) {
+    return String(lang || "").replace("_", "-").toLowerCase();
+  }
 
   function loadVoices() {
+    el.voiceSelect.innerHTML = "";
+
+    // Opción predeterminada que usa directamente el idioma es-MX del sistema (la más compatible en Android/iOS)
+    const defaultOpt = document.createElement("option");
+    defaultOpt.value = "default_es_mx";
+    defaultOpt.textContent = "🇲🇽 Español México (Automática del Sistema)";
+    el.voiceSelect.appendChild(defaultOpt);
+
     if (!("speechSynthesis" in window)) return;
-    const allVoices = window.speechSynthesis.getVoices();
+    const allVoices = window.speechSynthesis.getVoices() || [];
     if (!allVoices.length) return;
 
-    const spanishVoices = allVoices.filter(v => v.lang.toLowerCase().startsWith("es"));
+    const spanishVoices = allVoices.filter((v) => {
+      const l = normalizeLang(v.lang);
+      const n = (v.name || "").toLowerCase();
+      return l.startsWith("es") || l.startsWith("spa") || n.includes("spanish") || n.includes("español");
+    });
+
     spanishVoices.sort((a, b) => {
       const score = (v) => {
-        const lang = v.lang.toLowerCase();
-        if (lang.includes("es-mx")) return 4;
+        const lang = normalizeLang(v.lang);
+        if (lang.includes("es-mx") || lang.includes("mex")) return 4;
         if (lang.includes("es-us") || lang.includes("es-419")) return 3;
         if (lang.startsWith("es")) return 2;
         return 1;
@@ -209,7 +275,6 @@
     });
 
     availableVoices = spanishVoices.length > 0 ? spanishVoices : allVoices;
-    el.voiceSelect.innerHTML = "";
 
     availableVoices.forEach((voice) => {
       const opt = document.createElement("option");
@@ -218,55 +283,171 @@
       el.voiceSelect.appendChild(opt);
     });
 
-    if (!state.selectedVoiceURI && availableVoices.length > 0) {
+    // En PC, seleccionar la primera voz en español; en móvil dejar default_es_mx a menos que el usuario elija otra
+    if (!isMobileDevice && state.selectedVoiceURI === "default_es_mx" && availableVoices.length > 0) {
       state.selectedVoiceURI = availableVoices[0].voiceURI;
     }
+
     el.voiceSelect.value = state.selectedVoiceURI;
   }
 
   if ("speechSynthesis" in window) {
     loadVoices();
     window.speechSynthesis.onvoiceschanged = loadVoices;
+    // Algunos navegadores móviles tardan en poblar getVoices()
+    setTimeout(loadVoices, 250);
+    setTimeout(loadVoices, 1000);
+  } else {
+    loadVoices();
   }
 
-  function speakText(text, onDone) {
-    if (!state.voiceEnabled || !("speechSynthesis" in window)) {
-      state.isSpeaking = false;
-      el.speakingIndicator.classList.add("hidden");
-      if (onDone) onDone();
-      return;
+  function stopAllSpeech() {
+    clearTimeout(speechTimeoutId);
+    if (currentAudioEl) {
+      try {
+        currentAudioEl.pause();
+        currentAudioEl.src = "";
+      } catch (_) {}
+      currentAudioEl = null;
     }
-
-    window.speechSynthesis.cancel();
-
-    const utterance = new SpeechSynthesisUtterance(text);
-    const chosen = availableVoices.find(v => v.voiceURI === state.selectedVoiceURI);
-    if (chosen) {
-      utterance.voice = chosen;
-      utterance.lang = chosen.lang;
-    } else {
-      utterance.lang = "es-MX";
+    if ("speechSynthesis" in window) {
+      try {
+        window.speechSynthesis.cancel();
+      } catch (_) {}
     }
+    state.isSpeaking = false;
+    el.speakingIndicator.classList.add("hidden");
+  }
 
-    utterance.rate = state.voiceRate;
-    utterance.pitch = state.voicePitch;
+  // Respaldo de voz online por streaming HTML5 Audio (funciona en cualquier celular aunque no tenga TTS instalado)
+  function speakWithOnlineAudio(text, onDone) {
+    stopAllSpeech();
+    const cleanText = text.replace(/\.\.\./g, ",").slice(0, 200);
+    const url = `https://translate.googleapis.com/translate_tts?ie=UTF-8&client=tw-ob&tl=es-MX&q=${encodeURIComponent(cleanText)}`;
+
+    const audio = new Audio();
+    audio.referrerPolicy = "no-referrer";
+    audio.src = url;
+    audio.playbackRate = Math.max(0.75, Math.min(1.35, state.voiceRate));
+    currentAudioEl = audio;
 
     state.isSpeaking = true;
     el.speakingIndicator.classList.remove("hidden");
 
-    utterance.onend = () => {
+    const finish = () => {
+      if (currentAudioEl === audio) {
+        currentAudioEl = null;
+      }
       state.isSpeaking = false;
       el.speakingIndicator.classList.add("hidden");
       if (onDone) onDone();
     };
 
-    utterance.onerror = () => {
-      state.isSpeaking = false;
-      el.speakingIndicator.classList.add("hidden");
-      if (onDone) onDone();
-    };
+    audio.onended = finish;
+    audio.onerror = finish;
 
-    window.speechSynthesis.speak(utterance);
+    audio.play().catch(() => {
+      finish();
+    });
+  }
+
+  function speakText(text, onDone) {
+    if (!state.voiceEnabled) {
+      stopAllSpeech();
+      if (onDone) onDone();
+      return;
+    }
+
+    // Si el usuario eligió explícitamente Voz Online o el navegador no soporta speechSynthesis
+    if (state.ttsEngine === "online" || !("speechSynthesis" in window)) {
+      speakWithOnlineAudio(text, onDone);
+      return;
+    }
+
+    // Cancelar cualquier audio previo
+    clearTimeout(speechTimeoutId);
+    if (currentAudioEl) {
+      try { currentAudioEl.pause(); } catch (_) {}
+      currentAudioEl = null;
+    }
+
+    const wasBusy = window.speechSynthesis.speaking || window.speechSynthesis.pending;
+    if (wasBusy) {
+      try { window.speechSynthesis.cancel(); } catch (_) {}
+    }
+
+    // En Android/iOS, hay que esperar ~50ms después de cancel() para que no cancele la nueva frase
+    const delayMs = wasBusy ? 60 : 0;
+
+    speechTimeoutId = setTimeout(() => {
+      try {
+        window.speechSynthesis.resume();
+      } catch (_) {}
+
+      const utterance = new SpeechSynthesisUtterance(text);
+      // Guardar referencia global para evitar que el recolector de basura de Safari/Android la elimine
+      window.__activeLoteriaUtterance = utterance;
+
+      const chosen = state.selectedVoiceURI !== "default_es_mx"
+        ? availableVoices.find(v => v.voiceURI === state.selectedVoiceURI)
+        : null;
+
+      if (chosen) {
+        // En Android, asignar el objeto voice solo si su idioma está bien formado
+        if (!isMobileDevice || state.selectedVoiceURI !== "default_es_mx") {
+          utterance.voice = chosen;
+        }
+        utterance.lang = (chosen.lang || "es-MX").replace("_", "-");
+      } else {
+        utterance.lang = "es-MX";
+      }
+
+      utterance.rate = state.voiceRate;
+      utterance.pitch = state.voicePitch;
+
+      let started = false;
+      let finished = false;
+
+      const finishOnce = () => {
+        if (finished) return;
+        finished = true;
+        clearTimeout(fallbackTimer);
+        state.isSpeaking = false;
+        el.speakingIndicator.classList.add("hidden");
+        if (onDone) onDone();
+      };
+
+      utterance.onstart = () => {
+        started = true;
+        state.isSpeaking = true;
+        el.speakingIndicator.classList.remove("hidden");
+      };
+
+      utterance.onend = finishOnce;
+
+      utterance.onerror = () => {
+        if (!started && state.ttsEngine === "auto") {
+          finished = true;
+          clearTimeout(fallbackTimer);
+          speakWithOnlineAudio(text, onDone);
+          return;
+        }
+        finishOnce();
+      };
+
+      // Si en un celular con modo "auto" la voz nativa no arranca en 700ms, activar respaldo Online automáticamente
+      const fallbackTimer = setTimeout(() => {
+        if (!started && !finished && state.ttsEngine === "auto" && isMobileDevice) {
+          finished = true;
+          try { window.speechSynthesis.cancel(); } catch (_) {}
+          speakWithOnlineAudio(text, onDone);
+        }
+      }, 700);
+
+      state.isSpeaking = true;
+      el.speakingIndicator.classList.remove("hidden");
+      window.speechSynthesis.speak(utterance);
+    }, delayMs);
   }
 
   function buildCardCallPhrase(card, dichoText, isFirstCard = false) {
@@ -298,9 +479,7 @@
 
   function initNewGame(announceShuffle = false) {
     stopAutoPlay();
-    if ("speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
-    }
+    stopAllSpeech();
     clearTimeout(riddleRevealTimeout);
 
     state.deck = shuffleArray(LOTERIA_CARDS);
@@ -309,25 +488,27 @@
     state.chosenDichoMap.clear();
     state.currentCard = null;
     state.currentDicho = "";
-    state.isSpeaking = false;
     state.searchQuery = "";
     el.searchCardInput.value = "";
-    el.speakingIndicator.classList.add("hidden");
 
     el.activeCard.classList.add("is-waiting");
     el.activeCard.classList.remove("riddle-masked", "flip-anim");
     el.riddleOverlay.classList.add("hidden");
-    el.dichoVariantTag.textContent = "🎙️ VERSO CANTADO (ALEATORIO)";
+    el.dichoVariantTag.textContent = "🎙️ VERSO CANTADO";
     el.cardDicho.textContent =
-      '"¡Se va y se corre con la vieja del pozole! Presiona Sacar Carta o Automático para comenzar."';
+      '"¡Se va y se corre con la vieja del pozole! Toca la carta o el botón de abajo para comenzar."';
     el.currentCardLabel.textContent = "Esperando primera carta...";
     el.btnNextText.textContent = "¡Corre y se va! (Sacar 1ª Carta)";
+    el.mobileNextText.textContent = "¡Sacar 1ª Carta!";
     el.btnNextCard.disabled = false;
+    el.btnMobileNext.disabled = false;
     el.btnRepeat.disabled = true;
+    el.btnMobileRepeat.disabled = true;
     el.btnAnotherDicho.disabled = true;
 
     if (announceShuffle) {
       sfx.shuffle();
+      setMobileView("griton");
     }
 
     updateStatsAndCalledCards();
@@ -346,7 +527,6 @@
     const card = state.deck.pop();
     const turnNumber = state.drawn.length + 1;
 
-    // Seleccionar dicho aleatorio distinto al de la corrida anterior
     const picked = pickRandomDicho(card);
 
     state.currentCard = card;
@@ -359,13 +539,17 @@
     updateStatsAndCalledCards();
 
     el.btnRepeat.disabled = false;
+    el.btnMobileRepeat.disabled = false;
     el.btnAnotherDicho.disabled = false;
 
     if (state.deck.length === 0) {
       el.btnNextText.textContent = "Mazo terminado (54/54)";
+      el.mobileNextText.textContent = "Terminado (54/54)";
       el.btnNextCard.disabled = true;
+      el.btnMobileNext.disabled = true;
     } else {
       el.btnNextText.textContent = `Cantar Siguiente Carta (${state.deck.length} por salir)`;
+      el.mobileNextText.textContent = `Siguiente (${state.deck.length})`;
     }
 
     const phrase = buildCardCallPhrase(card, picked.text, isFirst);
@@ -387,13 +571,13 @@
     el.cardImage.alt = `#${card.id} ${card.name}`;
     el.cardTurnBadge.textContent = `Turno #${turnNumber}`;
 
-    el.dichoVariantTag.textContent = `🎙️ DICHO ${pickedDicho.index + 1} DE ${pickedDicho.total} (ALEATORIO)`;
+    el.dichoVariantTag.textContent = `🎙️ DICHO ${pickedDicho.index + 1} DE ${pickedDicho.total}`;
     el.cardDicho.textContent = `"${pickedDicho.text}"`;
 
     if (state.callStyle === "riddle") {
       el.activeCard.classList.add("riddle-masked");
       el.riddleOverlay.classList.remove("hidden");
-      el.currentCardLabel.textContent = "❓ ¿Qué carta es? (Modo Adivinanza)";
+      el.currentCardLabel.textContent = "❓ ¿Qué carta es? (Toca para revelar)";
       riddleRevealTimeout = setTimeout(() => {
         el.activeCard.classList.remove("riddle-masked");
         el.riddleOverlay.classList.add("hidden");
@@ -414,7 +598,7 @@
     if (!state.currentCard) return;
     const picked = pickRandomDicho(state.currentCard);
     state.currentDicho = picked.text;
-    el.dichoVariantTag.textContent = `🎙️ DICHO ${picked.index + 1} DE ${picked.total} (ALEATORIO)`;
+    el.dichoVariantTag.textContent = `🎙️ DICHO ${picked.index + 1} DE ${pickedDicho.total}`;
     el.cardDicho.textContent = `"${picked.text}"`;
     const phrase = buildCardCallPhrase(state.currentCard, picked.text, false);
     speakText(phrase);
@@ -462,13 +646,17 @@
   }
 
   function startAutoPlay() {
+    requestWakeLock();
     if (state.deck.length === 0) {
       initNewGame(true);
     }
     state.isAutoPlaying = true;
     el.btnAutoPlay.classList.add("is-active");
+    el.btnMobileAuto.classList.add("is-active");
     el.autoPlayIcon.textContent = "⏸️";
     el.autoPlayText.textContent = "Pausar";
+    el.mobileAutoIcon.textContent = "⏸️";
+    el.mobileAutoText.textContent = "Pausa";
     el.autoTimerWrap.classList.remove("hidden");
 
     if (!state.currentCard || !state.isSpeaking) {
@@ -480,14 +668,17 @@
     state.isAutoPlaying = false;
     cancelAnimationFrame(autoTimerId);
     el.btnAutoPlay.classList.remove("is-active");
+    el.btnMobileAuto.classList.remove("is-active");
     el.autoPlayIcon.textContent = "▶️";
     el.autoPlayText.textContent = "Automático";
+    el.mobileAutoIcon.textContent = "▶️";
+    el.mobileAutoText.textContent = "Auto";
     el.autoTimerWrap.classList.add("hidden");
     el.autoTimerBar.style.width = "0%";
   }
 
   // ==========================================
-  // MESA DE CARTAS CANTADAS (CON IMÁGENES TRADICIONALES)
+  // MESA DE CARTAS CANTADAS Y TIRA MÓVIL
   // ==========================================
   function updateStatsAndCalledCards() {
     const drawnTotal = state.drawn.length;
@@ -495,19 +686,41 @@
 
     el.drawnCount.textContent = drawnTotal;
     el.calledHeaderCount.textContent = drawnTotal;
+    el.mobileTabCalledCount.textContent = drawnTotal;
     el.remainingCount.textContent = remainingTotal;
 
     const progressPct = (drawnTotal / LOTERIA_CARDS.length) * 100;
     el.deckProgressBar.style.width = `${progressPct}%`;
 
+    renderMobileRecentStrip();
     renderCalledCardsMesa();
+  }
+
+  function renderMobileRecentStrip() {
+    el.recentMiniStrip.innerHTML = "";
+    if (state.drawn.length === 0) {
+      el.recentMiniStrip.innerHTML = `<span class="empty-mini-text">Aquí irán saliendo las cartas cantadas...</span>`;
+      return;
+    }
+
+    const recent = [...state.drawn].reverse().slice(0, 15);
+    recent.forEach((card) => {
+      const turn = state.drawnMap.get(card.id);
+      const item = document.createElement("div");
+      item.className = "mini-strip-card";
+      item.title = `#${card.id} ${card.name} (Turno #${turn})`;
+      item.innerHTML = `<img src="${card.image}" alt="${card.name}" loading="lazy" />`;
+      item.addEventListener("click", () => {
+        speakText(`${card.name}, salió en el turno ${turn}.`);
+      });
+      el.recentMiniStrip.appendChild(item);
+    });
   }
 
   function renderCalledCardsMesa() {
     const q = state.searchQuery.trim().toLowerCase();
     el.calledCardsGrid.innerHTML = "";
 
-    // Aviso instantáneo al buscar una carta
     if (q) {
       const exactOrPartial = LOTERIA_CARDS.find(
         c => String(c.id) === q || c.name.toLowerCase().includes(q)
@@ -518,7 +731,7 @@
         el.searchCheckAlert.classList.remove("hidden", "found", "not-found");
         if (isDrawn) {
           el.searchCheckAlert.classList.add("found");
-          el.searchCheckAlert.textContent = `✅ SÍ SALIÓ: #${exactOrPartial.id} ${exactOrPartial.name} (Salió en el turno #${turn})`;
+          el.searchCheckAlert.textContent = `✅ SÍ SALIÓ: #${exactOrPartial.id} ${exactOrPartial.name} (Turno #${turn})`;
         } else {
           el.searchCheckAlert.classList.add("not-found");
           el.searchCheckAlert.textContent = `❌ AÚN NO SALE: #${exactOrPartial.id} ${exactOrPartial.name} sigue en el mazo.`;
@@ -668,23 +881,40 @@
   // ==========================================
   // EVENTOS E INTERACCIÓN
   // ==========================================
-  el.btnNextCard.addEventListener("click", () => {
+  const handleManualNext = () => {
     if (state.isAutoPlaying) stopAutoPlay();
+    setMobileView("griton");
     drawNextCard();
-  });
+  };
+
+  el.btnNextCard.addEventListener("click", handleManualNext);
+  el.btnMobileNext.addEventListener("click", handleManualNext);
 
   el.btnAutoPlay.addEventListener("click", toggleAutoPlay);
+  el.btnMobileAuto.addEventListener("click", toggleAutoPlay);
+
   el.btnRepeat.addEventListener("click", repeatCurrentCard);
+  el.btnMobileRepeat.addEventListener("click", repeatCurrentCard);
+
   el.btnAnotherDicho.addEventListener("click", cycleAnotherDichoForCurrentCard);
 
-  el.btnNewGame.addEventListener("click", () => {
+  const confirmAndReset = () => {
     if (state.drawn.length > 0 && state.drawn.length < 54) {
       const ok = window.confirm("¿Deseas barajar todas las cartas y comenzar una corrida nueva?");
       if (!ok) return;
     }
     initNewGame(true);
-  });
+  };
 
+  el.btnNewGame.addEventListener("click", confirmAndReset);
+  el.btnNewGameHeader.addEventListener("click", confirmAndReset);
+
+  // Pestañas móviles
+  el.tabMobileGriton.addEventListener("click", () => setMobileView("griton"));
+  el.tabMobileMesa.addEventListener("click", () => setMobileView("mesa"));
+  el.btnSeeAllMobile.addEventListener("click", () => setMobileView("mesa"));
+
+  // Tocar la carta directamente en el celular revela (en adivinanza) o saca la siguiente carta
   el.activeCard.addEventListener("click", () => {
     if (state.currentCard && el.activeCard.classList.contains("riddle-masked")) {
       clearTimeout(riddleRevealTimeout);
@@ -692,7 +922,9 @@
       el.riddleOverlay.classList.add("hidden");
       el.currentCardLabel.textContent = `Carta #${state.currentCard.id} — ${state.currentCard.name}`;
       speakText(`¡${state.currentCard.name}!`);
+      return;
     }
+    handleManualNext();
   });
 
   el.speedSelect.addEventListener("change", (e) => {
@@ -743,8 +975,8 @@
 
   el.chkVoiceEnabled.addEventListener("change", (e) => {
     state.voiceEnabled = e.target.checked;
-    if (!state.voiceEnabled && "speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
+    if (!state.voiceEnabled) {
+      stopAllSpeech();
     }
   });
 
@@ -754,6 +986,10 @@
 
   el.chkIntroShout.addEventListener("change", (e) => {
     state.introShout = e.target.checked;
+  });
+
+  el.ttsEngineSelect.addEventListener("change", (e) => {
+    state.ttsEngine = e.target.value;
   });
 
   el.voiceSelect.addEventListener("change", (e) => {
@@ -791,8 +1027,7 @@
     if (e.code === "Space" || e.code === "ArrowRight") {
       e.preventDefault();
       if (!el.loteriaBannerModal.classList.contains("hidden")) return;
-      if (state.isAutoPlaying) stopAutoPlay();
-      drawNextCard();
+      handleManualNext();
     } else if (e.key.toLowerCase() === "p") {
       e.preventDefault();
       toggleAutoPlay();
@@ -828,5 +1063,6 @@
     });
   }
 
+  setMobileView("griton");
   initNewGame(false);
 })();

@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#1c100b" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -32,31 +32,44 @@
     <div class="flag flag-blue"></div>
   </div>
 
-  <!-- Encabezado Principal -->
+  <!-- Encabezado Principal (Compacto en Celular) -->
   <header class="app-header">
     <div class="brand">
-      <span class="brand-badge">🇲🇽 CARTAS TRADICIONALES DON CLEMENTE</span>
+      <span class="brand-badge">🇲🇽 LOTERÍA TRADICIONAL</span>
       <h1>EL GRITÓN DE LA LOTERÍA</h1>
-      <p class="subtitle">Cantador con dichos aleatorios y mesa de cartas cantadas para jugar con tablas impresas</p>
+      <p class="subtitle">Cantador con dichos aleatorios y mesa de cartas cantadas</p>
     </div>
 
     <div class="header-actions">
       <button id="btnLoteriaWin" class="btn btn-gold" title="Pausar para revisar la tabla ganadora (Tecla L)">
-        <span>🏆 ¡LOTERÍA! (Pausar y Revisar)</span>
+        <span>🏆 ¡LOTERÍA!</span>
       </button>
       <button id="btnAudioSettings" class="btn btn-outline" title="Configurar voz en español y velocidad">
-        <span>🔊 Ajustes de Voz</span>
+        <span>🔊 <span class="hide-xs">Voz</span></span>
       </button>
-      <button id="btnFullscreen" class="btn btn-outline" title="Pantalla completa para TV o monitor">
+      <button id="btnNewGameHeader" class="btn btn-danger-outline show-mobile-only" title="Barajar de nuevo las 54 cartas">
+        <span>🔀</span>
+      </button>
+      <button id="btnFullscreen" class="btn btn-outline hide-mobile" title="Pantalla completa para TV o monitor">
         <span>⛶ Pantalla Completa</span>
       </button>
     </div>
   </header>
 
+  <!-- Selector de Vista Rápido en Celular (Para no tener que hacer scroll largo) -->
+  <nav class="mobile-view-switcher" aria-label="Cambiar vista en celular">
+    <button id="tabMobileGriton" class="mobile-nav-tab active" type="button">
+      🎴 El Gritón (Cantar)
+    </button>
+    <button id="tabMobileMesa" class="mobile-nav-tab" type="button">
+      🃏 Cartas Cantadas (<span id="mobileTabCalledCount">0</span>/54)
+    </button>
+  </nav>
+
   <!-- Contenedor Principal -->
   <main class="main-layout">
-    <!-- IZQUIERDA: CARTA ACTUAL Y CONTROLES DEL GRITÓN -->
-    <section class="stage-section" aria-label="Carta actual cantada">
+    <!-- IZQUIERDA / VISTA 1: CARTA ACTUAL Y CONTROLES DEL GRITÓN -->
+    <section id="sectionGriton" class="stage-section" aria-label="Carta actual cantada">
       <!-- Barra de Estado del Mazo -->
       <div class="deck-status-bar">
         <div class="status-pill">
@@ -76,10 +89,11 @@
       <div class="card-stage">
         <!-- Contenedor 3D de la Carta Tradicional -->
         <div class="loteria-card-container">
-          <div id="activeCard" class="loteria-card is-waiting">
+          <div id="activeCard" class="loteria-card is-waiting" title="Toca la carta para sacar la siguiente">
             <!-- Reverso de la carta -->
             <div class="card-face card-back">
               <img src="cartas/0.PNG" alt="Lotería Mexicana Reverso" class="card-back-img" />
+              <div class="tap-to-start-badge">👆 Toca para sacar carta</div>
             </div>
 
             <!-- Frente de la carta con la imagen tradicional original -->
@@ -112,7 +126,7 @@
           <!-- Pergamino del Dicho Tradicional Aleatorio -->
           <div class="dicho-box">
             <div class="dicho-header">
-              <span id="dichoVariantTag" class="dicho-tag">🎙️ VERSO CANTADO (ALEATORIO)</span>
+              <span id="dichoVariantTag" class="dicho-tag">🎙️ VERSO CANTADO</span>
               <div class="dicho-header-right">
                 <span id="speakingIndicator" class="speaking-indicator hidden">
                   <span class="wave"></span><span class="wave"></span><span class="wave"></span> Cantando...
@@ -123,13 +137,24 @@
               </div>
             </div>
             <blockquote id="cardDicho" class="dicho-text">
-              "¡Se va y se corre con la vieja del pozole! Presiona Sacar Carta o Automático para comenzar."
+              "¡Se va y se corre con la vieja del pozole! Toca la carta o el botón de abajo para comenzar."
             </blockquote>
             <div id="currentCardLabel" class="current-card-label">Esperando primera carta...</div>
           </div>
 
-          <!-- Botones Principales del Gritón -->
-          <div class="primary-controls">
+          <!-- Tira Horizontal de Últimas Cartas (Visible directo en celular sin cambiar de pestaña) -->
+          <div class="mobile-recent-strip-wrap">
+            <div class="mobile-recent-header">
+              <span>Últimas cantadas en mesa:</span>
+              <button id="btnSeeAllMobile" type="button" class="link-btn">Ver todas →</button>
+            </div>
+            <div id="recentMiniStrip" class="recent-mini-strip">
+              <span class="empty-mini-text">Aquí irán saliendo las cartas cantadas...</span>
+            </div>
+          </div>
+
+          <!-- Botones Principales del Gritón (En PC/Tablet; en celular se fijan abajo para el pulgar) -->
+          <div class="primary-controls desktop-controls">
             <button id="btnNextCard" class="btn btn-primary btn-xl" title="Sacar la siguiente carta (Barra espaciadora)">
               <span class="btn-icon">🎴</span>
               <span id="btnNextText">¡Corre y se va! (Sacar 1ª Carta)</span>
@@ -154,21 +179,21 @@
           <!-- Ajustes Rápidos -->
           <div class="quick-settings-bar">
             <div class="setting-group">
-              <label for="speedSelect">⏱️ Tiempo entre cartas (Automático):</label>
+              <label for="speedSelect">⏱️ Ritmo automático:</label>
               <select id="speedSelect" class="select-input">
-                <option value="2500">Rápido (2.5 seg)</option>
-                <option value="4500" selected>Normal (4.5 seg)</option>
-                <option value="7000">Tranquilo (7 seg)</option>
-                <option value="10000">Pausado (10 seg)</option>
+                <option value="2500">Rápido (2.5 s)</option>
+                <option value="4500" selected>Normal (4.5 s)</option>
+                <option value="7000">Tranquilo (7 s)</option>
+                <option value="10000">Pausado (10 s)</option>
               </select>
             </div>
 
             <div class="setting-group">
               <label for="callStyleSelect">🗣️ Qué canta El Gritón:</label>
               <select id="callStyleSelect" class="select-input">
-                <option value="both" selected>Dicho Aleatorio + Nombre</option>
-                <option value="name">Solo el Nombre ("¡El Gallo!")</option>
-                <option value="riddle">Solo el Dicho (Adivinanza)</option>
+                <option value="both" selected>Dicho + Nombre</option>
+                <option value="name">Solo el Nombre</option>
+                <option value="riddle">Adivinanza (Dicho)</option>
               </select>
             </div>
           </div>
@@ -176,14 +201,14 @@
       </div>
     </section>
 
-    <!-- DERECHA: MESA DE CARTAS CANTADAS -->
-    <section class="called-cards-section" aria-label="Cartas que ya salieron cantadas">
+    <!-- DERECHA / VISTA 2: MESA DE CARTAS CANTADAS -->
+    <section id="sectionMesa" class="called-cards-section" aria-label="Cartas que ya salieron cantadas">
       <div class="called-header">
         <div class="called-title-row">
           <div>
             <h2>🃏 Cartas Cantadas en Mesa (<span id="calledHeaderCount">0</span>)</h2>
             <p class="history-subtitle">
-              Aquí van apareciendo las cartas tradicionales que ya salieron para revisar cualquier tabla impresa
+              Toca cualquier carta para escuchar en qué turno salió y revisar las tablas impresas
             </p>
           </div>
         </div>
@@ -194,19 +219,19 @@
             type="search"
             id="searchCardInput"
             class="search-input"
-            placeholder="🔍 Buscar en cartas cantadas (ej. La Dama, 3, Gallo)..."
+            placeholder="🔍 Buscar carta (ej. La Dama, 3, Gallo)..."
             aria-label="Buscar si una carta ya salió"
           />
 
           <div class="sort-tabs" role="tablist">
             <button class="sort-tab active" data-sort="recent" role="tab">
-              Últimas que salieron
+              Recientes
             </button>
             <button class="sort-tab" data-sort="number" role="tab">
-              Por Número (1 - 54)
+              Por # (1-54)
             </button>
             <button class="sort-tab" data-sort="all54" role="tab">
-              Ver las 54
+              Todas (54)
             </button>
           </div>
         </div>
@@ -219,13 +244,31 @@
       <div id="emptyCalledState" class="empty-called-state">
         <div class="empty-called-icon">🎴</div>
         <h3>Aún no ha salido ninguna carta</h3>
-        <p>Presiona <strong>"¡Corre y se va!"</strong> o activa el <strong>Modo Automático</strong>. Cada carta tradicional cantada irá apareciendo aquí en la mesa.</p>
+        <p>Toca <strong>"Cantar Carta"</strong> o activa <strong>"Auto"</strong> abajo. Cada carta tradicional cantada irá apareciendo aquí en la mesa.</p>
       </div>
 
       <!-- Cuadrícula de Cartas Tradicionales Cantadas -->
       <div id="calledCardsGrid" class="called-cards-grid"></div>
     </section>
   </main>
+
+  <!-- BARRA INFERIOR FIJA PARA CELULAR (Controles al alcance del pulgar) -->
+  <div class="mobile-bottom-bar" aria-label="Controles rápidos para celular">
+    <button id="btnMobileAuto" class="btn btn-secondary mobile-bar-btn" type="button">
+      <span id="mobileAutoIcon">▶️</span>
+      <span id="mobileAutoText">Auto</span>
+    </button>
+
+    <button id="btnMobileNext" class="btn btn-primary mobile-bar-main-btn" type="button">
+      <span>🎴</span>
+      <span id="mobileNextText">¡Cantar Carta!</span>
+    </button>
+
+    <button id="btnMobileRepeat" class="btn btn-secondary mobile-bar-btn" type="button" disabled>
+      <span>🔁</span>
+      <span>Repetir</span>
+    </button>
+  </div>
 
   <!-- Modal Configuración de Voz y Sonido -->
   <div id="audioModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="audioModalTitle">
@@ -261,7 +304,16 @@
         </div>
 
         <div class="form-group">
-          <label for="voiceSelect">Voz en Español del sistema:</label>
+          <label for="ttsEngineSelect">Motor de Voz (Especial para Celulares):</label>
+          <select id="ttsEngineSelect" class="select-input full-width">
+            <option value="auto" selected>Automático (Nativa + Respaldo Online si falla)</option>
+            <option value="online">Voz Online Español México (Funciona en cualquier celular)</option>
+            <option value="native">Voz del Sistema del Dispositivo (Web Speech)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="voiceSelect">Voz del sistema (cuando se usa Voz del Dispositivo):</label>
           <select id="voiceSelect" class="select-input full-width"></select>
         </div>
 
@@ -296,13 +348,13 @@
       </div>
       <div class="modal-body">
         <p class="celebration-text">
-          El juego está en pausa. Aquí están las <strong><span id="modalCalledTotal">0</span> cartas cantadas</strong> ordenadas por número para revisar rápido la tabla impresa:
+          Juego en pausa. Aquí están las <strong><span id="modalCalledTotal">0</span> cartas cantadas</strong> ordenadas por número para revisar rápido la tabla impresa:
         </p>
         <div id="modalCalledMiniList" class="modal-called-mini-list"></div>
       </div>
       <div class="modal-footer">
-        <button id="btnConfirmWinner" class="btn btn-gold">🎉 ¡Sí Ganó! (Lanzar Confeti)</button>
-        <button id="btnContinuePlaying" class="btn btn-primary">▶️ Seguir Cantando Cartas</button>
+        <button id="btnConfirmWinner" class="btn btn-gold">🎉 ¡Sí Ganó! (Confeti)</button>
+        <button id="btnContinuePlaying" class="btn btn-primary">▶️ Seguir Cantando</button>
       </div>
     </div>
   </div>

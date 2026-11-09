@@ -1,4 +1,4 @@
-const CACHE_NAME = "el-griton-loteria-v1";
+const CACHE_NAME = "el-griton-loteria-v3";
 const ASSETS = [
   "./",
   "./index.html",
@@ -26,9 +26,25 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
+// Network-first para archivos de código (HTML/CSS/JS), Cache-first para imágenes de las cartas
 self.addEventListener("fetch", (event) => {
+  const req = event.request;
+  const url = new URL(req.url);
+
+  if (url.pathname.includes("/cartas/")) {
+    event.respondWith(
+      caches.match(req).then((cached) => cached || fetch(req))
+    );
+    return;
+  }
+
   event.respondWith(
-    caches.match(event.request).then((cached) => cached || fetch(event.request))
+    fetch(req)
+      .then((networkResp) => {
+        const clone = networkResp.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(req, clone));
+        return networkResp;
+      })
+      .catch(() => caches.match(req))
   );
 });
-
