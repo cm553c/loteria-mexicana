@@ -1077,10 +1077,19 @@
     }
   });
 
-  // Registrar Service Worker para que funcione como App instalable en celular (PWA)
+  // Actualizar Service Worker y limpiar cachés viejos (v1/v2) que retenían estilos anteriores
   if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./sw.js").catch(() => {});
+      if ("caches" in window) {
+        caches.keys().then((keys) => {
+          keys.forEach((k) => {
+            if (k !== "el-griton-loteria-v5") caches.delete(k);
+          });
+        });
+      }
+      navigator.serviceWorker.register("./sw.js?v=5").then((reg) => {
+        reg.update();
+      }).catch(() => {});
     });
   }
 
