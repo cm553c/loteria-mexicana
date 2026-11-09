@@ -32,7 +32,7 @@
     <div class="flag flag-blue"></div>
   </div>
 
-  <!-- Encabezado Principal (Compacto en Celular) -->
+  <!-- Encabezado Principal -->
   <header class="app-header">
     <div class="brand">
       <span class="brand-badge">🇲🇽 LOTERÍA TRADICIONAL</span>
@@ -41,14 +41,11 @@
     </div>
 
     <div class="header-actions">
-      <button id="btnLoteriaWin" class="btn btn-gold" title="Pausar para revisar la tabla ganadora (Tecla L)">
-        <span>🏆 ¡LOTERÍA!</span>
-      </button>
       <button id="btnAudioSettings" class="btn btn-outline" title="Configurar voz en español y velocidad">
-        <span>🔊 <span class="hide-xs">Voz</span></span>
+        <span>🔊 Voz y Audio</span>
       </button>
-      <button id="btnNewGameHeader" class="btn btn-danger-outline show-mobile-only" title="Barajar de nuevo las 54 cartas">
-        <span>🔀</span>
+      <button id="btnNewGameHeader" class="btn btn-danger-outline" title="Barajar de nuevo las 54 cartas">
+        <span>🔀 Nueva Corrida</span>
       </button>
       <button id="btnFullscreen" class="btn btn-outline hide-mobile" title="Pantalla completa para TV o monitor">
         <span>⛶ Pantalla Completa</span>
@@ -56,7 +53,7 @@
     </div>
   </header>
 
-  <!-- Selector de Vista Rápido en Celular (Para no tener que hacer scroll largo) -->
+  <!-- Selector de Vista Rápido en Celular -->
   <nav class="mobile-view-switcher" aria-label="Cambiar vista en celular">
     <button id="tabMobileGriton" class="mobile-nav-tab active" type="button">
       🎴 El Gritón (Cantar)
@@ -127,20 +124,42 @@
           <div class="dicho-box">
             <div class="dicho-header">
               <span id="dichoVariantTag" class="dicho-tag">🎙️ VERSO CANTADO</span>
-              <div class="dicho-header-right">
-                <span id="speakingIndicator" class="speaking-indicator hidden">
-                  <span class="wave"></span><span class="wave"></span><span class="wave"></span> Cantando...
-                </span>
-                <button id="btnAnotherDicho" class="btn-mini-dicho" disabled title="Cantar otro dicho diferente de esta misma carta">
-                  🎲 Otro dicho
-                </button>
-              </div>
+              <span id="speakingIndicator" class="speaking-indicator hidden">
+                <span class="wave"></span><span class="wave"></span><span class="wave"></span> Cantando...
+              </span>
             </div>
+
             <blockquote id="cardDicho" class="dicho-text">
-              "¡Se va y se corre con la vieja del pozole! Toca la carta o el botón de abajo para comenzar."
+              "¡Se va y se corre con la vieja del pozole! Toca la carta o el botón para comenzar."
             </blockquote>
-            <div id="currentCardLabel" class="current-card-label">Esperando primera carta...</div>
+
+            <div class="dicho-footer">
+              <div id="currentCardLabel" class="current-card-label">Esperando primera carta...</div>
+              <button
+                id="btnAnotherDicho"
+                type="button"
+                class="btn-another-dicho"
+                disabled
+                title="Cambiar y cantar otro dicho diferente de esta misma carta"
+              >
+                🎲 Cantar otro dicho
+              </button>
+            </div>
           </div>
+
+          <!-- BOTÓN DESTACADO DE ¡LOTERÍA! (Siempre visible, grande y accesible tanto en PC como en Celular) -->
+          <button
+            id="btnLoteriaWin"
+            type="button"
+            class="btn btn-loteria-hero"
+            title="Pausar el juego inmediatamente y revisar las cartas de quien gritó Lotería (Tecla L)"
+          >
+            <span class="loteria-hero-icon">🏆</span>
+            <span class="loteria-hero-text">
+              <strong>¡LOTERÍA! — Pausar y Revisar Ganador</strong>
+              <small>Toca aquí cuando alguien grite "¡Lotería!" o "¡Buenas!"</small>
+            </span>
+          </button>
 
           <!-- Tira Horizontal de Últimas Cartas (Visible directo en celular sin cambiar de pestaña) -->
           <div class="mobile-recent-strip-wrap">
@@ -153,24 +172,24 @@
             </div>
           </div>
 
-          <!-- Botones Principales del Gritón (En PC/Tablet; en celular se fijan abajo para el pulgar) -->
+          <!-- Botones Principales del Gritón (En PC/Tablet) -->
           <div class="primary-controls desktop-controls">
-            <button id="btnNextCard" class="btn btn-primary btn-xl" title="Sacar la siguiente carta (Barra espaciadora)">
+            <button id="btnNextCard" type="button" class="btn btn-primary btn-xl" title="Sacar la siguiente carta (Barra espaciadora)">
               <span class="btn-icon">🎴</span>
               <span id="btnNextText">¡Corre y se va! (Sacar 1ª Carta)</span>
             </button>
 
             <div class="secondary-controls-row">
-              <button id="btnAutoPlay" class="btn btn-secondary" title="Cantar cartas automáticamente (Tecla P)">
+              <button id="btnAutoPlay" type="button" class="btn btn-secondary" title="Cantar cartas automáticamente (Tecla P)">
                 <span id="autoPlayIcon">▶️</span>
-                <span id="autoPlayText">Automático</span>
+                <span id="autoPlayText">Modo Automático</span>
               </button>
 
-              <button id="btnRepeat" class="btn btn-secondary" disabled title="Volver a cantar la carta actual (Tecla R)">
+              <button id="btnRepeat" type="button" class="btn btn-secondary" disabled title="Volver a cantar la carta actual (Tecla R)">
                 <span>🔁 Repetir Carta</span>
               </button>
 
-              <button id="btnNewGame" class="btn btn-danger-outline" title="Barajar de nuevo las 54 cartas">
+              <button id="btnNewGame" type="button" class="btn btn-danger-outline" title="Barajar de nuevo las 54 cartas">
                 <span>🔀 Nueva Corrida</span>
               </button>
             </div>
@@ -224,13 +243,13 @@
           />
 
           <div class="sort-tabs" role="tablist">
-            <button class="sort-tab active" data-sort="recent" role="tab">
+            <button class="sort-tab active" data-sort="recent" role="tab" type="button">
               Recientes
             </button>
-            <button class="sort-tab" data-sort="number" role="tab">
+            <button class="sort-tab" data-sort="number" role="tab" type="button">
               Por # (1-54)
             </button>
-            <button class="sort-tab" data-sort="all54" role="tab">
+            <button class="sort-tab" data-sort="all54" role="tab" type="button">
               Todas (54)
             </button>
           </div>
@@ -278,7 +297,7 @@
           <span class="modal-badge">🔊 CONFIGURACIÓN DE AUDIO</span>
           <h2 id="audioModalTitle">Voz del Gritón y Efectos</h2>
         </div>
-        <button id="btnCloseAudioModal" class="btn-icon-close" aria-label="Cerrar ajustes de audio">✕</button>
+        <button id="btnCloseAudioModal" class="btn-icon-close" type="button" aria-label="Cerrar ajustes de audio">✕</button>
       </div>
 
       <div class="modal-body settings-form">
@@ -327,11 +346,11 @@
           <input type="range" id="voicePitch" min="0.8" max="1.25" step="0.05" value="1.0" />
         </div>
 
-        <button id="btnTestVoice" class="btn btn-secondary">🎙️ Probar voz del Gritón</button>
+        <button id="btnTestVoice" type="button" class="btn btn-secondary">🎙️ Probar voz del Gritón</button>
       </div>
 
       <div class="modal-footer">
-        <button id="btnSaveAudioModal" class="btn btn-primary">Guardar y Cerrar</button>
+        <button id="btnSaveAudioModal" type="button" class="btn btn-primary">Guardar y Cerrar</button>
       </div>
     </div>
   </div>
@@ -344,7 +363,7 @@
           <span class="modal-badge">🏆 JUEGO EN PAUSA PARA REVISAR TABLA</span>
           <h2>¡Gritaron LOTERÍA!</h2>
         </div>
-        <button id="btnCloseLoteriaModal" class="btn-icon-close" aria-label="Cerrar">✕</button>
+        <button id="btnCloseLoteriaModal" class="btn-icon-close" type="button" aria-label="Cerrar">✕</button>
       </div>
       <div class="modal-body">
         <p class="celebration-text">
@@ -353,8 +372,8 @@
         <div id="modalCalledMiniList" class="modal-called-mini-list"></div>
       </div>
       <div class="modal-footer">
-        <button id="btnConfirmWinner" class="btn btn-gold">🎉 ¡Sí Ganó! (Confeti)</button>
-        <button id="btnContinuePlaying" class="btn btn-primary">▶️ Seguir Cantando</button>
+        <button id="btnConfirmWinner" type="button" class="btn btn-gold">🎉 ¡Sí Ganó! (Confeti)</button>
+        <button id="btnContinuePlaying" type="button" class="btn btn-primary">▶️ Seguir Cantando</button>
       </div>
     </div>
   </div>

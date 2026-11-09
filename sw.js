@@ -1,4 +1,4 @@
-const CACHE_NAME = "el-griton-loteria-v3";
+const CACHE_NAME = "el-griton-loteria-v4";
 const ASSETS = [
   "./",
   "./index.html",

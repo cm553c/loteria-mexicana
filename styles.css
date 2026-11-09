@@ -60,11 +60,6 @@ body {
 .flag-red { background: #ef4444; }
 .flag-cyan { background: #3b82f6; }
 
-/* Utilidades de visibilidad móvil/escritorio */
-.show-mobile-only {
-  display: none !important;
-}
-
 .mobile-view-switcher,
 .mobile-bottom-bar,
 .mobile-recent-strip-wrap {
@@ -173,6 +168,60 @@ body {
   box-shadow: 0 6px 18px rgba(245, 158, 11, 0.35);
 }
 
+/* BOTÓN PROTAGONISTA DE ¡LOTERÍA! */
+.btn-loteria-hero {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.9rem;
+  padding: 0.85rem 1.2rem;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #fde047 0%, #f59e0b 55%, #d97706 100%);
+  color: #1c100b;
+  border: 2px solid #fffbeb;
+  box-shadow: 0 8px 24px rgba(245, 158, 11, 0.42);
+  text-align: left;
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+.btn-loteria-hero:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(251, 191, 36, 0.55);
+}
+
+.loteria-hero-icon {
+  font-size: 2rem;
+  line-height: 1;
+  background: rgba(28, 16, 11, 0.14);
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.loteria-hero-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+}
+
+.loteria-hero-text strong {
+  font-size: 1.05rem;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  color: #1c100b;
+}
+
+.loteria-hero-text small {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #451a03;
+}
+
 .btn-secondary {
   background: var(--bg-panel-light);
   color: var(--cream);
@@ -204,9 +253,17 @@ body {
   margin: 0 auto;
   padding: 1.2rem 1.5rem 2.5rem;
   display: grid;
-  grid-template-columns: 1.02fr 1fr;
+  grid-template-columns: minmax(0, 1.04fr) minmax(0, 1fr);
   gap: 1.5rem;
   align-items: start;
+}
+
+.stage-section,
+.called-cards-section,
+.card-stage,
+.griton-controls-panel {
+  min-width: 0;
+  max-width: 100%;
 }
 
 /* Estado del Mazo */
@@ -219,6 +276,11 @@ body {
   border-radius: 16px;
   border: 1px solid var(--border-warm);
   margin-bottom: 0.9rem;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  font-variant-numeric: tabular-nums;
 }
 
 .status-pill {
@@ -226,6 +288,7 @@ body {
   align-items: baseline;
   gap: 0.35rem;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .status-label {
@@ -238,6 +301,9 @@ body {
 .status-pill strong {
   font-size: 1.3rem;
   color: var(--gold-bright);
+  display: inline-block;
+  min-width: 2ch;
+  text-align: right;
 }
 
 .status-total {
@@ -246,7 +312,8 @@ body {
 }
 
 .deck-progress-track {
-  flex: 1;
+  flex: 1 1 0%;
+  min-width: 0;
   height: 10px;
   background: rgba(0, 0, 0, 0.45);
   border-radius: 99px;
@@ -264,13 +331,17 @@ body {
 /* Escenario Carta + Controles */
 .card-stage {
   display: grid;
-  grid-template-columns: 280px 1fr;
+  grid-template-columns: 280px minmax(0, 1fr);
   gap: 1.35rem;
   background: var(--bg-surface);
   border: 1px solid var(--border-warm);
   border-radius: 22px;
   padding: 1.35rem;
   box-shadow: var(--shadow-lg);
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
 }
 
 /* Carta Tradicional 3D con Imagen Original */
@@ -442,7 +513,7 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  gap: 0.9rem;
+  gap: 0.85rem;
   width: 100%;
 }
 
@@ -454,42 +525,60 @@ body {
   padding: 0.9rem 1.1rem;
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 0.55rem;
 }
 
 .dicho-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  flex-wrap: wrap;
   gap: 0.4rem;
 }
 
-.dicho-header-right {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
 .dicho-tag {
-  font-size: 0.72rem;
+  font-size: 0.74rem;
   font-weight: 800;
   color: var(--gold);
   letter-spacing: 0.08em;
 }
 
-.btn-mini-dicho {
-  background: rgba(251, 191, 36, 0.15);
-  color: var(--gold-bright);
-  border: 1px solid rgba(251, 191, 36, 0.4);
-  border-radius: 8px;
-  padding: 0.24rem 0.6rem;
-  font-size: 0.75rem;
-  font-weight: 700;
-  cursor: pointer;
+.dicho-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding-top: 0.35rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.btn-mini-dicho:disabled {
+.btn-another-dicho {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: linear-gradient(135deg, #472b1e, #5c3726);
+  color: var(--gold-bright);
+  border: 1.5px solid var(--gold);
+  border-radius: 10px;
+  padding: 0.45rem 0.85rem;
+  font-family: inherit;
+  font-size: 0.84rem;
+  font-weight: 800;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: transform 0.12s ease, background 0.15s ease;
+}
+
+.btn-another-dicho:hover:not(:disabled) {
+  background: linear-gradient(135deg, #5c3726, #734530);
+  transform: translateY(-1px);
+}
+
+.btn-another-dicho:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.btn-another-dicho:disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }
@@ -528,7 +617,7 @@ body {
 }
 
 .current-card-label {
-  font-size: 0.86rem;
+  font-size: 0.88rem;
   font-weight: 800;
   color: var(--gold-bright);
   letter-spacing: 0.03em;
@@ -758,10 +847,6 @@ body {
     display: none !important;
   }
 
-  .show-mobile-only {
-    display: inline-flex !important;
-  }
-
   .papel-picado {
     height: 14px;
   }
@@ -788,13 +873,9 @@ body {
   }
 
   .header-actions .btn {
-    padding: 0.45rem 0.65rem;
+    padding: 0.45rem 0.7rem;
     font-size: 0.78rem;
     border-radius: 10px;
-  }
-
-  .hide-xs {
-    display: none;
   }
 
   /* Pestañas superiores para alternar entre Gritón y Mesa en 1 toque */
@@ -828,9 +909,12 @@ body {
   }
 
   .main-layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     padding: 0.55rem 0.85rem calc(5.4rem + env(safe-area-inset-bottom, 0px));
     gap: 0.75rem;
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: hidden;
   }
 
   .mobile-hidden-panel {
@@ -841,6 +925,14 @@ body {
     padding: 0.45rem 0.85rem;
     margin-bottom: 0.55rem;
     border-radius: 12px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .deck-progress-track {
+    min-width: 0;
   }
 
   .status-pill strong {
@@ -848,16 +940,20 @@ body {
   }
 
   .card-stage {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     justify-items: center;
     padding: 0.8rem;
     gap: 0.7rem;
     border-radius: 18px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow: hidden;
   }
 
   /* Carta dimensionada para caber perfecto junto con el dicho en pantalla de celular */
   .loteria-card-container {
-    width: min(52vw, 200px);
+    width: min(50vw, 195px);
     gap: 0.45rem;
   }
 
@@ -874,17 +970,32 @@ body {
   }
 
   .dicho-box {
-    padding: 0.65rem 0.85rem;
+    padding: 0.7rem 0.85rem;
     border-radius: 12px;
   }
 
   .dicho-text {
     font-size: 0.96rem;
-    line-height: 1.32;
+    line-height: 1.34;
   }
 
-  .current-card-label {
-    font-size: 0.8rem;
+  .btn-loteria-hero {
+    padding: 0.75rem 0.95rem;
+    border-radius: 14px;
+  }
+
+  .loteria-hero-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 1.6rem;
+  }
+
+  .loteria-hero-text strong {
+    font-size: 0.95rem;
+  }
+
+  .loteria-hero-text small {
+    font-size: 0.73rem;
   }
 
   /* Tira horizontal de cartas recientes en la vista de El Gritón */
@@ -896,6 +1007,10 @@ body {
     padding: 0.55rem 0.7rem;
     border-radius: 12px;
     border: 1px solid rgba(255, 255, 255, 0.08);
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow: hidden;
   }
 
   .mobile-recent-header {
@@ -923,6 +1038,9 @@ body {
     padding-bottom: 2px;
     min-height: 68px;
     align-items: center;
+    width: 0;
+    min-width: 100%;
+    max-width: 100%;
   }
 
   .empty-mini-text {

@@ -596,12 +596,33 @@
 
   function cycleAnotherDichoForCurrentCard() {
     if (!state.currentCard) return;
-    const picked = pickRandomDicho(state.currentCard);
-    state.currentDicho = picked.text;
-    el.dichoVariantTag.textContent = `🎙️ DICHO ${picked.index + 1} DE ${pickedDicho.total}`;
-    el.cardDicho.textContent = `"${picked.text}"`;
-    const phrase = buildCardCallPhrase(state.currentCard, picked.text, false);
-    speakText(phrase);
+    const card = state.currentCard;
+    const list = Array.isArray(card.dichos) && card.dichos.length > 0
+      ? card.dichos
+      : [card.dicho || card.name];
+
+    const prevIdx = state.lastDichoIdxMap.has(card.id)
+      ? state.lastDichoIdxMap.get(card.id)
+      : 0;
+    const nextIdx = (prevIdx + 1) % list.length;
+
+    state.lastDichoIdxMap.set(card.id, nextIdx);
+    state.chosenDichoMap.set(card.id, list[nextIdx]);
+    state.currentDicho = list[nextIdx];
+
+    el.dichoVariantTag.textContent = `🎙️ DICHO ${nextIdx + 1} DE ${list.length}`;
+    el.cardDicho.textContent = `"${list[nextIdx]}"`;
+
+    resetAutoTimerProgress();
+    const phrase = state.callStyle === "riddle"
+      ? list[nextIdx]
+      : `${list[nextIdx]} ... ¡${card.name}!`;
+
+    speakText(phrase, () => {
+      if (state.isAutoPlaying && state.deck.length > 0) {
+        startAutoCountdown();
+      }
+    });
   }
 
   // ==========================================
